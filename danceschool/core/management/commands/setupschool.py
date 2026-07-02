@@ -87,7 +87,8 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
-        from cms.api import create_page, add_plugin, publish_page
+        from django.db import transaction
+        from cms.api import create_page, add_plugin
         from cms.constants import VISIBILITY_ANONYMOUS, VISIBILITY_USERS
         from cms.models import Page, StaticPlaceholder
 
@@ -481,16 +482,17 @@ Remember, all page settings and content can be changed later via the admin inter
         if registration_first:
             home_page = create_page(
                 'Registration', 'cms/home.html', initial_language, menu_title='Registration',
-                apphook='RegistrationApphook', in_navigation=True, published=True
+                apphook='RegistrationApphook', in_navigation=True
             )
-            home_page.set_as_homepage()
+            with transaction.atomic():
+                home_page.set_as_homepage()
             self.stdout.write('Registration page added.\n')
         else:
             add_home_page = self.boolean_input('Create a \'Home\' page [Y/n]', True)
             if add_home_page:
                 home_page = create_page(
                     'Home', 'cms/frontpage.html', initial_language,
-                    menu_title='Home', in_navigation=True, published=True
+                    menu_title='Home', in_navigation=True
                 )
                 content_placeholder = home_page.get_placeholders(initial_language).get(slot='content')
                 add_plugin(
@@ -499,8 +501,8 @@ Remember, all page settings and content can be changed later via the admin inter
                     '\n\n<p>If you are logged in, click \'Edit Page\' to begin ' +
                     'adding content.</p>'
                 )
-                publish_page(home_page, this_user, initial_language)
-                home_page.set_as_homepage()
+                with transaction.atomic():
+                    home_page.set_as_homepage()
                 self.stdout.write('Home page added.\n')
             add_registration_link = self.boolean_input(
                 'Add a link to the Registration page to the main navigation menu [Y/n]',
@@ -510,8 +512,7 @@ Remember, all page settings and content can be changed later via the admin inter
                 registration_link_page = create_page(
                     'Registration', 'cms/home.html', initial_language,
                     menu_title='Register', slug='register',
-                    overwrite_url=reverse('registration'), in_navigation=True,
-                    published=True
+                    overwrite_url=reverse('registration'), in_navigation=True
                 )
                 self.stdout.write('Registration link added.\n')
 
@@ -522,8 +523,7 @@ Remember, all page settings and content can be changed later via the admin inter
         if add_instructor_page:
             instructor_page = create_page(
                 'Instructors', 'cms/twocolumn_rightsidebar.html',
-                initial_language, menu_title='Instructors', in_navigation=True,
-                published=True
+                initial_language, menu_title='Instructors', in_navigation=True
             )
             content_placeholder = instructor_page.get_placeholders(initial_language).get(slot='content')
             sidebar_placeholder = instructor_page.get_placeholders(initial_language).get(slot='sidebar')
@@ -539,7 +539,6 @@ Remember, all page settings and content can be changed later via the admin inter
                 photoRequired=True,
                 template='core/staff_image_set.html'
             )
-            publish_page(instructor_page, this_user, initial_language)
             self.stdout.write('Instructor page added.\n')
 
         add_calendar_page = self.boolean_input(
@@ -549,11 +548,10 @@ Remember, all page settings and content can be changed later via the admin inter
         if add_calendar_page:
             calendar_page = create_page(
                 'Calendar', 'cms/home.html', initial_language,
-                menu_title='Calendar', in_navigation=True, published=True
+                menu_title='Calendar', in_navigation=True
             )
             content_placeholder = calendar_page.get_placeholders(initial_language).get(slot='content')
             add_plugin(content_placeholder, 'PublicCalendarPlugin', initial_language)
-            publish_page(calendar_page, this_user, initial_language)
             self.stdout.write('Calendar page added.\n')
 
         if apps.is_installed('danceschool.private_lessons') and allow_public_privatelesson_booking:
@@ -566,7 +564,7 @@ Remember, all page settings and content can be changed later via the admin inter
                     'Schedule Private Lessons', 'cms/home.html', initial_language,
                     menu_title='Private Lessons', slug='private_lessons',
                     overwrite_url=reverse('bookPrivateLesson'),
-                    in_navigation=True, published=True
+                    in_navigation=True
                 )
                 self.stdout.write('Private lesson scheduling link added.\n')
 
@@ -580,14 +578,12 @@ Remember, all page settings and content can be changed later via the admin inter
                 general_cat = faq_models.FAQCategory.objects.get_or_create(name='General Questions')
                 faq_page = create_page(
                     'Frequently Asked Questions', 'cms/twocolumn_rightsidebar.html',
-                    initial_language, menu_title='FAQ', in_navigation=True,
-                    published=True
+                    initial_language, menu_title='FAQ', in_navigation=True
                 )
                 content_placeholder = faq_page.get_placeholders(initial_language).get(slot='content')
                 sidebar_placeholder = faq_page.get_placeholders(initial_language).get(slot='sidebar')
                 add_plugin(content_placeholder, 'FAQCategoryPlugin', initial_language, category=general_cat[0])
                 add_plugin(sidebar_placeholder, 'FAQTOCPlugin', initial_language)
-                publish_page(faq_page, this_user, initial_language)
                 self.stdout.write('FAQ page added.\n')
 
         if apps.is_installed('danceschool.news'):
@@ -605,7 +601,7 @@ Remember, all page settings and content can be changed later via the admin inter
 
                 create_page(
                     'Latest News', 'cms/twocolumn_rightsidebar.html', initial_language,
-                    menu_title='News', apphook='NewsApphook', in_navigation=True, published=True)
+                    menu_title='News', apphook='NewsApphook', in_navigation=True)
                 self.stdout.write('News page added.\n')
 
         if apps.is_installed('danceschool.stats'):
@@ -613,7 +609,7 @@ Remember, all page settings and content can be changed later via the admin inter
             if add_stats_page:
                 stats_page = create_page(
                     'School Performance Stats', 'cms/admin_home.html', initial_language,
-                    menu_title='Stats', slug='stats', apphook='StatsApphook', in_navigation=False, published=False)
+                    menu_title='Stats', slug='stats', apphook='StatsApphook', in_navigation=False)
                 sp = StaticPlaceholder.objects.get_or_create(code='stats_graphs')
                 stats_placeholder = sp[0].draft
                 stats_placeholder_public = sp[0].public
@@ -630,7 +626,6 @@ Remember, all page settings and content can be changed later via the admin inter
                 for template in template_list:
                     add_plugin(stats_placeholder, 'StatsGraphPlugin', initial_language, template=template)
                     add_plugin(stats_placeholder_public, 'StatsGraphPlugin', initial_language, template=template)
-                publish_page(stats_page, this_user, initial_language)
                 self.stdout.write('School performance stats page added.\n')
 
         add_login_link = self.boolean_input('Add login/logout and account links to the main navigation bar [Y/n]', True)
@@ -638,19 +633,19 @@ Remember, all page settings and content can be changed later via the admin inter
             create_page(
                 'Login', 'cms/home.html', initial_language,
                 menu_title='Login', slug='login', overwrite_url=reverse('account_login'),
-                in_navigation=True, limit_visibility_in_menu=VISIBILITY_ANONYMOUS, published=True
+                in_navigation=True, limit_visibility_in_menu=VISIBILITY_ANONYMOUS
             )
             self.stdout.write('Login link added.\n')
             create_page(
                 'My Account', 'cms/home.html', initial_language,
                 menu_title='My Account', slug='profile', overwrite_url=reverse('accountProfile'),
-                in_navigation=True, limit_visibility_in_menu=VISIBILITY_USERS, published=True
+                in_navigation=True, limit_visibility_in_menu=VISIBILITY_USERS
             )
             self.stdout.write('\'My Account\' link added.\n')
             create_page(
                 'Logout', 'cms/home.html', initial_language,
                 menu_title='Logout', slug='logout', overwrite_url=reverse('account_logout'),
-                in_navigation=True, limit_visibility_in_menu=VISIBILITY_USERS, published=True
+                in_navigation=True, limit_visibility_in_menu=VISIBILITY_USERS
             )
             self.stdout.write('Logout link added.\n')
 
