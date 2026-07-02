@@ -492,7 +492,7 @@ Remember, all page settings and content can be changed later via the admin inter
                     'Home', 'cms/frontpage.html', initial_language,
                     menu_title='Home', in_navigation=True, published=True
                 )
-                content_placeholder = home_page.get_placeholders().get(slot='content')
+                content_placeholder = home_page.get_placeholders(initial_language).get(slot='content')
                 add_plugin(
                     content_placeholder, 'TextPlugin', initial_language,
                     body='<h1>Welcome to %s</h1>' % school_name +
@@ -525,8 +525,8 @@ Remember, all page settings and content can be changed later via the admin inter
                 initial_language, menu_title='Instructors', in_navigation=True,
                 published=True
             )
-            content_placeholder = instructor_page.get_placeholders().get(slot='content')
-            sidebar_placeholder = instructor_page.get_placeholders().get(slot='sidebar')
+            content_placeholder = instructor_page.get_placeholders(initial_language).get(slot='content')
+            sidebar_placeholder = instructor_page.get_placeholders(initial_language).get(slot='sidebar')
             add_plugin(
                 content_placeholder, 'StaffMemberListPlugin', initial_language,
                 orderChoice=StaffMemberListPluginModel.OrderChoices.random,
@@ -551,7 +551,7 @@ Remember, all page settings and content can be changed later via the admin inter
                 'Calendar', 'cms/home.html', initial_language,
                 menu_title='Calendar', in_navigation=True, published=True
             )
-            content_placeholder = calendar_page.get_placeholders().get(slot='content')
+            content_placeholder = calendar_page.get_placeholders(initial_language).get(slot='content')
             add_plugin(content_placeholder, 'PublicCalendarPlugin', initial_language)
             publish_page(calendar_page, this_user, initial_language)
             self.stdout.write('Calendar page added.\n')
@@ -583,8 +583,8 @@ Remember, all page settings and content can be changed later via the admin inter
                     initial_language, menu_title='FAQ', in_navigation=True,
                     published=True
                 )
-                content_placeholder = faq_page.get_placeholders().get(slot='content')
-                sidebar_placeholder = faq_page.get_placeholders().get(slot='sidebar')
+                content_placeholder = faq_page.get_placeholders(initial_language).get(slot='content')
+                sidebar_placeholder = faq_page.get_placeholders(initial_language).get(slot='sidebar')
                 add_plugin(content_placeholder, 'FAQCategoryPlugin', initial_language, category=general_cat[0])
                 add_plugin(sidebar_placeholder, 'FAQTOCPlugin', initial_language)
                 publish_page(faq_page, this_user, initial_language)
