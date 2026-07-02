@@ -88,7 +88,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
 
         from django.db import transaction
-        from cms.api import create_page, add_plugin
+        from cms.api import create_page, add_plugin, publish_page
         from cms.constants import VISIBILITY_ANONYMOUS, VISIBILITY_USERS
         from cms.models import Page, StaticPlaceholder
 
@@ -484,6 +484,7 @@ Remember, all page settings and content can be changed later via the admin inter
                 'Registration', 'cms/home.html', initial_language, menu_title='Registration',
                 apphook='RegistrationApphook', in_navigation=True
             )
+            publish_page(home_page, this_user, initial_language)
             with transaction.atomic():
                 home_page.set_as_homepage()
             self.stdout.write('Registration page added.\n')
@@ -494,13 +495,14 @@ Remember, all page settings and content can be changed later via the admin inter
                     'Home', 'cms/frontpage.html', initial_language,
                     menu_title='Home', in_navigation=True
                 )
-                content_placeholder = home_page.get_placeholders(initial_language).get(slot='content')
+                content_placeholder = home_page.get_placeholders().get(slot='content')
                 add_plugin(
                     content_placeholder, 'TextPlugin', initial_language,
                     body='<h1>Welcome to %s</h1>' % school_name +
                     '\n\n<p>If you are logged in, click \'Edit Page\' to begin ' +
                     'adding content.</p>'
                 )
+                publish_page(home_page, this_user, initial_language)
                 with transaction.atomic():
                     home_page.set_as_homepage()
                 self.stdout.write('Home page added.\n')
@@ -514,6 +516,7 @@ Remember, all page settings and content can be changed later via the admin inter
                     menu_title='Register', slug='register',
                     overwrite_url=reverse('registration'), in_navigation=True
                 )
+                publish_page(registration_link_page, this_user, initial_language)
                 self.stdout.write('Registration link added.\n')
 
         add_instructor_page = self.boolean_input(
@@ -525,8 +528,8 @@ Remember, all page settings and content can be changed later via the admin inter
                 'Instructors', 'cms/twocolumn_rightsidebar.html',
                 initial_language, menu_title='Instructors', in_navigation=True
             )
-            content_placeholder = instructor_page.get_placeholders(initial_language).get(slot='content')
-            sidebar_placeholder = instructor_page.get_placeholders(initial_language).get(slot='sidebar')
+            content_placeholder = instructor_page.get_placeholders().get(slot='content')
+            sidebar_placeholder = instructor_page.get_placeholders().get(slot='sidebar')
             add_plugin(
                 content_placeholder, 'StaffMemberListPlugin', initial_language,
                 orderChoice=StaffMemberListPluginModel.OrderChoices.random,
@@ -539,6 +542,7 @@ Remember, all page settings and content can be changed later via the admin inter
                 photoRequired=True,
                 template='core/staff_image_set.html'
             )
+            publish_page(instructor_page, this_user, initial_language)
             self.stdout.write('Instructor page added.\n')
 
         add_calendar_page = self.boolean_input(
@@ -550,8 +554,9 @@ Remember, all page settings and content can be changed later via the admin inter
                 'Calendar', 'cms/home.html', initial_language,
                 menu_title='Calendar', in_navigation=True
             )
-            content_placeholder = calendar_page.get_placeholders(initial_language).get(slot='content')
+            content_placeholder = calendar_page.get_placeholders().get(slot='content')
             add_plugin(content_placeholder, 'PublicCalendarPlugin', initial_language)
+            publish_page(calendar_page, this_user, initial_language)
             self.stdout.write('Calendar page added.\n')
 
         if apps.is_installed('danceschool.private_lessons') and allow_public_privatelesson_booking:
@@ -566,6 +571,7 @@ Remember, all page settings and content can be changed later via the admin inter
                     overwrite_url=reverse('bookPrivateLesson'),
                     in_navigation=True
                 )
+                publish_page(privatelesson_link_page, this_user, initial_language)
                 self.stdout.write('Private lesson scheduling link added.\n')
 
         if apps.is_installed('danceschool.faq'):
@@ -580,10 +586,11 @@ Remember, all page settings and content can be changed later via the admin inter
                     'Frequently Asked Questions', 'cms/twocolumn_rightsidebar.html',
                     initial_language, menu_title='FAQ', in_navigation=True
                 )
-                content_placeholder = faq_page.get_placeholders(initial_language).get(slot='content')
-                sidebar_placeholder = faq_page.get_placeholders(initial_language).get(slot='sidebar')
+                content_placeholder = faq_page.get_placeholders().get(slot='content')
+                sidebar_placeholder = faq_page.get_placeholders().get(slot='sidebar')
                 add_plugin(content_placeholder, 'FAQCategoryPlugin', initial_language, category=general_cat[0])
                 add_plugin(sidebar_placeholder, 'FAQTOCPlugin', initial_language)
+                publish_page(faq_page, this_user, initial_language)
                 self.stdout.write('FAQ page added.\n')
 
         if apps.is_installed('danceschool.news'):
@@ -598,10 +605,10 @@ Remember, all page settings and content can be changed later via the admin inter
                     content='<p>Continue to check this news feed to remain ' +
                     'up-to-date on everything that is happening with the school.</p>'
                 )
-
-                create_page(
+                news_page = create_page(
                     'Latest News', 'cms/twocolumn_rightsidebar.html', initial_language,
                     menu_title='News', apphook='NewsApphook', in_navigation=True)
+                publish_page(news_page, this_user, initial_language)
                 self.stdout.write('News page added.\n')
 
         if apps.is_installed('danceschool.stats'):
@@ -626,6 +633,7 @@ Remember, all page settings and content can be changed later via the admin inter
                 for template in template_list:
                     add_plugin(stats_placeholder, 'StatsGraphPlugin', initial_language, template=template)
                     add_plugin(stats_placeholder_public, 'StatsGraphPlugin', initial_language, template=template)
+                publish_page(stats_page, this_user, initial_language)
                 self.stdout.write('School performance stats page added.\n')
 
         add_login_link = self.boolean_input('Add login/logout and account links to the main navigation bar [Y/n]', True)
