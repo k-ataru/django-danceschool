@@ -10,7 +10,7 @@ from django.utils.translation import gettext_lazy as _
 from django.http import HttpResponseRedirect
 
 from dal import autocomplete
-from rangefilter.filter import DateRangeFilter
+from rangefilter.filters import DateRangeFilter
 from polymorphic.admin import (
     PolymorphicParentModelAdmin, PolymorphicChildModelAdmin,
     PolymorphicChildModelFilter
