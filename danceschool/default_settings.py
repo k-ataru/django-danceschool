@@ -103,17 +103,20 @@ TEXT_ADDITIONAL_ATTRIBUTES = ('scrolling', 'allowfullscreen', 'frameborder')
 # backend for easy testing.  For production purposes, it is strongly recommended
 # that you use Huey's Redis backend by copying the lines below and pasting them
 # into your project's settings.py file.
-HUEY = SqliteHuey(
-    'danceschool',
-    filename=path.join(
-        path.dirname(
-            path.abspath(
-                getattr(sys.modules['__main__'], '__file__', path.dirname(__file__)),
-            )
-        ),
-        'huey.sqlite3'
+try:
+    HUEY = SqliteHuey(
+        'danceschool',
+        filename=path.join(
+            path.dirname(
+                path.abspath(
+                    getattr(sys.modules['__main__'], '__file__', path.dirname(__file__)),
+                )
+            ),
+            'huey.sqlite3'
+        )
     )
-)
+except Exception:
+    HUEY = None
 # from huey import RedisHuey
 # from redis import ConnectionPool
 # pool = ConnectionPool(host='localhost', port=6379, max_connections=20)
